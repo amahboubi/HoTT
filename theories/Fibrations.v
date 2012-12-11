@@ -85,6 +85,11 @@ Proof. exact 1. Defined.
 Lemma transportp1 {A} {x y : A} (p : x = y) : p # 1 = p.
 Proof. case p. exact 1. Qed.
 
+Lemma f_transport (X : Type) (P Q : X -> Type) 
+      (f : forall x, P x -> Q x) (x y : X) (p : x = y) (Px : P x) :
+  f y (p # Px) = p # (f x Px).
+Proof. by case: _ / p. Qed.
+
 (** A homotopy fiber for a map [f] at [y] is the space of paths of the
    form [f x = y]. *)
 

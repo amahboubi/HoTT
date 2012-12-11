@@ -53,3 +53,14 @@ elim: n U V => /= [U V e U_is_contr | n ihn U V e U_level_n x y].
   exact: equiv_contr_is_contr e.
 exact: (ihn _ _ [equiv of (resp e^-1)^-1]).
 Qed.
+
+Lemma retract_has_hlevel n U V (f : U -> V) (g : V -> U) (gK : cancel g f) :
+      has_hlevel n U -> has_hlevel n V.
+Proof.
+elim: n U V f g gK => /= [| n ihn] U V f g gK.
+  move=> U_is_contr; exists (f (contr_elt U_is_contr)) => a.
+  by rewrite -[a]gK; congr f; apply: is_contr_eq.
+(*   exact: equiv_contr_is_contr e. *)
+(* exact: (ihn _ _ [equiv of (resp e^-1)^-1]). *)
+admit.
+Qed.

@@ -101,12 +101,19 @@ Definition inverse_of (phf : phantom (A -> B) f) := inverse.
 Local Notation "f ^-1" := (inverse_of (@Phantom (_ -> _) f)).
 
 Definition equivK : cancel f f^-1 := @equiv_retraction _ _ f.
+
 Definition inverseK : cancel f^-1 f := @equiv_section _ _ f.
 
 (* Canonical symmetry property of the equiv operation. *)
 Canonical equiv_sym : (B <~> A) := @can2_equiv _ _ f^-1 f inverseK equivK.
 
 End EquivTheory.
+
+Arguments equiv_fun : simpl nomatch.
+Arguments equiv_adjoint : simpl nomatch.
+Arguments inverse_of : simpl never.
+Arguments equivK : simpl never.
+Arguments inverseK : simpl never.
 
 (* Global notation for the inverse.*)
 Notation "f ^-1" := (@inverse_of _ _ _ (@Phantom (_ -> _) f)) : equiv_scope.
@@ -211,6 +218,61 @@ Canonical equiv_transport (x y : T)  p : P x <~> P y :=
   can2_equiv (transportK p) (@transport_backwardK x y p).
 
 End EquivTransport.
+
+Module TotalToFibers.
+Section TotalToFibers.
+Variable X : Type.
+Variables (P Q : X -> Type).
+Variable f : forall x, P x -> Q x.
+
+(* from f, we define a function from the total space of P to the total
+space of Q *)
+Definition F (u : {x | P x}) : {x | Q x} := (pr1 u; f (pr2 u)).
+
+(* We suppose that F is an equivalence *)
+Hypothesis F_is_equiv : is_equiv F.
+Canonical F_equiv := is_equiv_equiv F_is_equiv.
+
+Definition g (x : X) (Qx : Q x) : P x := let u := (x; Qx) in
+  pr1`_* (inverseK [equiv of F] u) # pr2 (F^-1 u).
+
+Lemma fK x : cancel (@f x) (@g x).
+Proof.
+move=> Px; pose u := (x; Px); rewrite /g -[(x; f _)]/(F u) -[Px]/(pr2 u).
+by rewrite -resp_equivK -[equivK _ _]invpK; case: _ / ((equivK _ u)^-1)%path.
+Qed.
+
+Lemma gK x : cancel (@g x) (@f x).
+Proof.
+move=> Qx; rewrite /g f_transport -[inverseK _ _]invpK; set u := (x; Qx).
+rewrite /= -[f (pr2 _)]/(pr2 (F _)) -[pr1 (F^-1 u)]/(pr1 (F (F^-1 u))).
+by case: _ / (inverseK _ _)^-1%path.
+Qed. 
+
+Definition f_equiv x : P x <~> Q x := can2_equiv (@fK x) (@gK x).
+
+End TotalToFibers.
+End TotalToFibers.
+
+Module FibersToTotal.
+Section FibersToTotal.
+Variable X : Type.
+Variables (P Q : X -> Type).
+Variable f : forall x, P x <~> Q x.
+Arguments f [x].
+
+(* from f, we define a function from the total space of P to the total
+space of Q *)
+Definition F (u : {x | P x}) : {x | Q x} := (pr1 u; f (pr2 u)).
+Definition G (v : {x | Q x}) : {x | P x} := (pr1 v; f^-1 (pr2 v)).
+
+Lemma FK : cancel F G. Proof. by case=> x Px; rewrite /F /G /= equivK. Qed.
+Lemma GK : cancel G F. Proof. by case=> x Qx; rewrite /F /G /= inverseK. Qed.
+
+Definition F_equiv : {x | P x} <~> {x | Q x} := can2_equiv FK GK.
+
+End FibersToTotal.
+End FibersToTotal.
 
 (* An example from Peter Lumsdaine's (old and probably outdated) github repo: *)
 (* https://github.com/peterlefanulumsdaine/
