@@ -8,10 +8,11 @@ Import PathNotations.
 Open Scope path_scope.
 Open Scope equiv_scope.
 
-(* We start with some material missing in the underlying libraries *)
 
+(* We start with some material missing in the underlying libraries *)
 Definition happly {X} {P : X -> Type} {f g : forall x, P x} (p : f = g) (x : X) 
   : f x = g x := (fun f => f x)`_* p.
+
 
 Lemma congr_exist {A : Type} {Q : A -> Type}
       {x y : A} {u : Q x} {v : Q y} (p : x = y) :
@@ -38,18 +39,18 @@ Canonical sigA_equiv := can2_equiv sigAK sigA_inverseK.
 End SigTheory.
 
 (* A lemma stolen from the Agda library written by Dan Licata *)
-Lemma transport_dep (G V : Type) (B :  forall (y : G), V -> Type) (t1 t2 : G)
-  (d : t1 = t2) (Qt1 : forall a : V, B t1 a) :
-  transport (fun y => forall x : V, B y x) d Qt1 = 
-  (fun x => transport (fun y => B y x) d (Qt1 x)).
+Lemma transport_dep (G V : Type) (Q :  forall (g : G), V -> Type) (t1 t2 : G)
+  (d : t1 = t2) (Qt1 : forall v : V, Q t1 v) :
+  transport (fun g => forall v : V, Q g v) d Qt1 = 
+  (fun v => transport (fun g => Q g v) d (Qt1 v)).
 Proof. by case: _ /  d Qt1. Qed.
 
 (* An other intersting one I did not find in the agda lib *)
-Lemma transport_eq C D (L R : C -> D) (t1 t2 : C) (qq : t1 = t2) 
+Lemma transport_eq C D (L R : C -> D) (t1 t2 : C) (d : t1 = t2) 
   (Qt1 : L t1 = R t1) : 
-  transport (fun y : C => L y = R y) qq  Qt1 = 
-  ((pmap L qq)^-1 * Qt1 * pmap R qq)%path.
-Proof. by case: _ / qq => /=; rewrite mul1p. Qed.
+  transport (fun c : C => L c = R c) d  Qt1 = 
+  ((pmap L d)^-1 * Qt1 * pmap R d)%path.
+Proof. by case: _ / d => /=; rewrite mul1p. Qed.
 
 (* We work here under a strong assumption of function extensionality. *)
 
@@ -100,10 +101,6 @@ Definition eta : A -> A' := fun (a : A) (X : U) (f : A -> X) => f a.
 
 Definition rho : A' -> A := fun (h : A') => h A (fun a : A => a).
 
-(** [eta] is a section of [rho], definitionally. This is very convenient. 
-   NB: We should never have to use retr. *)
-Definition retr (a : A) : rho (eta a) = a := erefl.
-
 (** We impose an additional condition on elements of [A'], which is
    just a form of naturality. *)
 Definition natural (h : A') : Type :=
@@ -111,8 +108,8 @@ Definition natural (h : A') : Type :=
 
 (** And then we ned an additional condition on naturality. *)
 Definition coherent {h : A'} (p : natural h) :=
-  forall (X Y Z : U) (e : X -> Y) (f : Y -> Z) (g : A -> X),
-    p Y Z f (e \o g) * pmap f (p X Y e g) = p X Z (f \o e) g.
+  forall (X Y Z : U) (f : X -> Y) (k : Y -> Z) (g : A -> X),
+    p Y Z k (f \o g) * pmap k (p X Y f g) = p X Z (k \o f) g.
 
 Definition eta_natural (a : A) : natural (eta a) := fun _ _ _ _ => 1.
 
@@ -129,10 +126,10 @@ by have /(canRL (mulKp _)) := c _ _ _ id id f; rewrite mulVp pmapidp.
 Qed.
 
 Lemma coherent_fg X Y f g : 
-  p X Y f g = p A Y (f \o g) id * (f`_* (p A X g id)^-1)%path.
+  p X Y f g = p A Y (f \o g) id * (pmap f (p A X g id)^-1)%path.
 Proof.
 have := c _ _ _ g f id.
-move/(congr1 (fun x => x * (f`_* (p A X g id))^-1)%path).
+move/(congr1 (fun x => x * (pmap f (p A X g id))^-1)%path).
 by rewrite mulpK pmapV.
 Qed.
 
@@ -165,14 +162,15 @@ Definition alpha (h : A') (p : natural h) : eta (rho h) = h :=
 
 Lemma vK : cancel v u.
 Proof.
-move=> [h [p c]]; rewrite /u /=; apply: (pmap sigA)^-1 => /=.
+move=> [h [p c]]; rewrite /u /=. 
+apply: (pmap sigA)^-1 => /=.
 suff q : (eta (h A id); eta_natural (h A id)) = (h; p).
   by apply: (congr_exist q); apply: is_contr_eq; apply: coherent_is_contr.
 apply: (congr_exist (alpha _ p)).
 apply: funext => X; apply: funext => Y; apply: funext => f; apply: funext => g.
 rewrite 4!transport_dep [p X Y f g]coherent_fg // transport_eq.
-rewrite -[_ `_* _]/(((@^~ (f \o g)) \o (@^~ Y)) `_* (alpha _ _)).
-rewrite -[_ `_* _ in X in _ * X]/((f \o (@^~ g) \o (@^~ X)) `_* (alpha _ _)).
+rewrite -[pmap _ _]/(((@^~ (f \o g)) \o (@^~ Y)) `_* (alpha _ _)).
+rewrite -[pmap _  _ in X in _ * X]/((f \o (@^~ g) \o (@^~ X)) `_* (alpha _ _)).
 by rewrite !pmapcomp -!/(happly _ _) !inverseK invpK.
 Qed.
 
