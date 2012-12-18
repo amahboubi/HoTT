@@ -168,10 +168,11 @@ suff q : (eta (h A id); eta_natural (h A id)) = (h; p).
   by apply: (congr_exist q); apply: is_contr_eq; apply: coherent_is_contr.
 apply: (congr_exist (alpha _ p)).
 apply: funext => X; apply: funext => Y; apply: funext => f; apply: funext => g.
-rewrite 4!transport_dep [p X Y f g]coherent_fg // transport_eq.
+rewrite 4!transport_dep  transport_eq.
 rewrite -[pmap _ _]/(((@^~ (f \o g)) \o (@^~ Y)) `_* (alpha _ _)).
 rewrite -[pmap _  _ in X in _ * X]/((f \o (@^~ g) \o (@^~ X)) `_* (alpha _ _)).
-by rewrite !pmapcomp -!/(happly _ _) !inverseK invpK.
+rewrite !pmapcomp -!/(happly _ _) !inverseK invpK.
+by rewrite -coherent_fg.
 Qed.
 
 Definition A_equiv_A'': A <~> A'' := can2_equiv uK vK.
