@@ -24,7 +24,7 @@ Record equiv A B := Equiv {
   equiv_section : cancel equiv_adjoint equiv_fun; 
   equiv_retraction : cancel equiv_fun equiv_adjoint;
   equiv_coh : forall x, 
-    equiv_section (equiv_fun x) = resp equiv_fun (equiv_retraction x)
+    equiv_section (equiv_fun x) = pmap equiv_fun (equiv_retraction x)
 }.
 
 (* Don't ask :-), but this is an ingredient for the notation below. *)
@@ -52,7 +52,7 @@ Canonical equiv_refl A : A <~> A := @Equiv _ _ idfun idfun
 (* coherence condition wrt the application of functions on paths *)
 
 Definition adjointify {A B}(f : A -> B) g (fK : cancel f g)(gK : cancel g f) := 
-   fun a => (g `_* (f `_* (fK a))^-1) * (resp g (gK (f a))) * (fK a).
+   fun a => (g `_* (f `_* (fK a))^-1) * (pmap g (gK (f a))) * (fK a).
 
 (* Now the coherence. It is still strange that I neeed invpK at the end. May
   be the definition of adjointify is not the best. *)
@@ -61,7 +61,7 @@ Lemma adjointifyP A B (f : A -> B) g
    gK (f a) = f`_* (fK' a).
 Proof.
 pose gKV : id =1 f \o g :=  (fun x => (gK x)^-1).
-by rewrite  !resppM !(conj_canV gKV) -(conjpM gKV) conjpE mulpK mulpVK invpK.
+by rewrite  !pmapM !(conj_canV gKV) -(conjpM gKV) conjpE mulpK mulpVK invpK.
 Qed.
 
 (* And now we prove that we can get an equivalence from a bijection *)
@@ -122,7 +122,7 @@ Notation "f ^-1" := (@inverse_of _ _ _ (@Phantom (_ -> _) f)) : equiv_scope.
   the structure/notation was attached to a fixed f and we need it two times here. *)
 Lemma inverseKE (A B : Type) (f : A <~> B) : (f^-1)^-1 = f. Proof. by []. Qed.
 
-Lemma resp_equivK (A B : Type) (f : A <~> B) (x : A) :
+Lemma pmap_equivK (A B : Type) (f : A <~> B) (x : A) :
     f`_* (equivK f x) = inverseK f (f x).
 Proof. by case: f. Qed.
 
@@ -203,7 +203,7 @@ Variables (T : Type)(P : T -> Type).
 (* to be given to the equivalence constructor. Notice the benfit of tunning the*)
 (* behaviour of the arguments of transport. *)
 Definition transport_backward (x y : T) (p : x = y) (py : P y) : P x 
-  := (p^-1) # py.
+  := transport _ (p^-1) py.
 
 Lemma transportK (x y : T)  p :
  cancel (transport P p) (@transport_backward x y p).
@@ -234,12 +234,12 @@ Hypothesis F_is_equiv : is_equiv F.
 Canonical F_equiv := is_equiv_equiv F_is_equiv.
 
 Definition g (x : X) (Qx : Q x) : P x := let u := (x; Qx) in
-  pr1`_* (inverseK [equiv of F] u) # pr2 (F^-1 u).
+  transport _ (pr1`_* (inverseK [equiv of F] u)) (pr2 (F^-1 u)).
 
 Lemma fK x : cancel (@f x) (@g x).
 Proof.
 move=> Px; pose u := (x; Px); rewrite /g -[(x; f _)]/(F u) -[Px]/(pr2 u).
-by rewrite -resp_equivK -[equivK _ _]invpK; case: _ / ((equivK _ u)^-1)%path.
+by rewrite -pmap_equivK -[equivK _ _]invpK; case: _ / ((equivK _ u)^-1)%path.
 Qed.
 
 Lemma gK x : cancel (@g x) (@f x).
@@ -341,7 +341,7 @@ Notation equiv_inj e := (can_inj (equivK [equiv of e])).
 
 (* The equivalence induced by transporting the trivial (reflexive) equivalence *)
 (* of U with itself along an path from U to V. *)
-Definition eq_equiv (U V : Type) (p : U = V) : U <~> V := p # (equiv_refl U).
+Definition eq_equiv (U V : Type) (p : U = V) : U <~> V := transport _ p (equiv_refl U).
 
 Implicit Arguments eq_equiv [[U] [V]].
 

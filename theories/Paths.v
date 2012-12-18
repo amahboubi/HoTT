@@ -69,8 +69,7 @@ Delimit Scope path_scope with path.
 (* The path obtained by applying the function f to the path p. *)
 (* Was: map *)
 (* I am still slightly disturbed by this 'map' vocabulary but could not find*)
-(*  a better name by lack of culture. I temporarilly use 'resp' instead, *)
-(* following Hoffman & Streicher *)
+(*  a better name by lack of culture. I temporarilly use 'pmap' instead, *)
 (* Note that it is really importat here that the constant (f_equal) *)
 (* hidden by this notation is transparent. *)
 (* In our modified version of Coq's prelude we have even declared it *)
@@ -81,8 +80,8 @@ Delimit Scope path_scope with path.
 (* section. *)
 (* We reorder the arguments of f_equal so that it behaves more conveniently for *)
 (* our purpose *)
-Definition resp A B x y f := @f_equal A B f x y.
-Arguments resp [A B] [x y] f _.
+Definition pmap A B x y f := @f_equal A B f x y.
+Arguments pmap [A B] [x y] f _.
 
 (* The inverse of a path: was opposite. esym is a definition for identity_sym *)
 (* see ssrfun *)
@@ -134,7 +133,7 @@ Notation "p / q" := (p * q^-1)%path : path_scope.
 (* by Coq's parser to be part of the identifier, so we insert a backquote in *)
 (* between. *)
 (* Not very satisfactory but again, waits for a better ascii art idea...*)
-Notation "f `_*" := (resp f) (at level 2, format "f `_*") : path_scope.
+Notation "f `_*" := (pmap f) (at level 2, format "f `_*") : path_scope.
 
 (* Conjugation *)
 Notation "q ^ p" := (conjp p q)%path : path_scope.
@@ -305,7 +304,7 @@ Proof. by case exy. Qed.
 (* and hence replaces z by t everywhere in the goal. Here we use the 'case' *)
 (* standard tactic which performs dependent elimination. *)
 (* Conclusion : rewrite r performs the non dependent elimination of an identity proof *)
-(* and case: _ /r (resp. case) performs the dependent elimination *)
+(* and case: _ /r (pmap. case) performs the dependent elimination *)
 (* Was: concat_associativity *)
 Lemma mulpA A (x y z t : A) (p : x = y) (q : y = z) (r : z = t) :
   p * (q * r) = (p * q) * r.
@@ -412,15 +411,15 @@ Proof. by rewrite -{1}[q]invpK => H; apply: mulpN_eq1. Qed.
 (* Consider a type (A : Type) as a category whose points are the inhabitants *)
 (* (a : A) and morphisms are inhabitants (p : @identity A a b). Then for *)
 (* any (A B : Type), and any f : A -> B, f can be seen as un functor from A to B *)
-(* wich transforms objects by a |-> f a and morphisms by p |-> resp f p*)
+(* wich transforms objects by a |-> f a and morphisms by p |-> pmap f p*)
 (* We prove this. *)
 
 (* Was: idpath_map *)
-Lemma resp1f A B x (f : A -> B) : f`_* 1 = 1 :> (f x = f x).
+Lemma pmap1f A B x (f : A -> B) : f`_* 1 = 1 :> (f x = f x).
 Proof. reflexivity. Qed.
 
 (* Was: concat_map *)
-Lemma resppM A B (f : A -> B) (x y z : A) (exy : x = y) (eyz : y = z) :
+Lemma pmapM A B (f : A -> B) (x y z : A) (exy : x = y) (eyz : y = z) :
   f`_* (exy * eyz) = (f`_* exy) * (f`_* eyz ).
 Proof. by case eyz; case exy. Qed.
 
@@ -430,24 +429,24 @@ Proof. by case eyz; case exy. Qed.
 (* morphisms are again the inhabitants of (@identity I_A) *)
 (* We also consider the category of types where points are types (A : Type) *)
 (* and morphisms between A and B are functions living in the type A -> B *)
-(* Now resp is a functor bewteen these two categories which acts on objects as*)
-(* A |-> (@identity A) and on morphisms as f |-> resp f. We prove this. *)
+(* Now pmap is a functor bewteen these two categories which acts on objects as*)
+(* A |-> (@identity A) and on morphisms as f |-> pmap f. We prove this. *)
 
 (* id is the ssreflect notation for the polymorphic identity function with the appropriate *)
 (* implicit args declaration allowing to drop the type argument. see ssrfun.v *) 
 (* Was: idmap_map *)
-Lemma respidp A (x y : A) (p : x = y) : id`_* p = p.
+Lemma pmapidp A (x y : A) (p : x = y) : id`_* p = p.
 Proof. by case p. Qed.
 
-(* (_ \o _) is the infix notation for composition of functions according on their resp. *)
+(* (_ \o _) is the infix notation for composition of functions according on their pmap. *)
 (* codomain and domain. see ssrefun.v *)
 (* Was: compose_map *)
-Lemma resppcomp A B C (f : A -> B) (g : B -> C) (x y : A) (p : x = y) :
+Lemma pmapcomp A B C (f : A -> B) (g : B -> C) (x y : A) (p : x = y) :
   (g \o f)`_* p = g`_* (f`_* p).
 Proof. by case p. Qed.
 
 (* Was: opposite_map *)
-Lemma resppV A B (f : A -> B) (x y : A) (p : x = y) : (f`_* p)^-1 = f`_* p^-1.
+Lemma pmapV A B (f : A -> B) (x y : A) (p : x = y) : (f`_* p)^-1 = f`_* p^-1.
 Proof. by case p. Qed.
 
 
@@ -468,55 +467,55 @@ Proof. by rewrite !conjpE !mulpA mulpK. Qed.
 
 (* We need to simpl before berforming dependent case on (p x) and that's what => /= does *)
 (* Was not in the original file ? *)
-Lemma mulprespLR A B (f g : A -> B) (p : f =1 g) (x y : A) (q : x = y) :
+Lemma mulpmapLR A B (f g : A -> B) (p : f =1 g) (x y : A) (q : x = y) :
   (f`_* q) * (p y) = (p x) * (g`_* q).
 Proof. by case q => /=; case (p x). Qed.
 
 (* Was  homotopy_naturality_toid *)
-Lemma respeq1mulp A (f : A -> A) (p : f =1 id) (x y : A) (q : x = y) :
+Lemma pmapeq1mulp A (f : A -> A) (p : f =1 id) (x y : A) (q : x = y) :
   (f`_* q) * (p y) = (p x) * q.
-Proof. by rewrite (mulprespLR p) respidp. Qed.
+Proof. by rewrite (mulpmapLR p) pmapidp. Qed.
 
 (* Was: homotopy_naturality_fromid, but the equality was stated the other way around*)
-Lemma mulprespeq1 A (f : A -> A) (p : id =1 f) (x y : A) (q : x = y) :
+Lemma mulpmapeq1 A (f : A -> A) (p : id =1 f) (x y : A) (q : x = y) :
   (p x) * (f`_* q) =  q * (p y).
-Proof. by rewrite -(mulprespLR p) respidp. Qed. 
+Proof. by rewrite -(mulpmapLR p) pmapidp. Qed. 
 
 (* Here we see how this "conjugation" operation appears in a natural way *)
 (* Was not in the original file ? *)
-Lemma resp_eqp A B (f g : A -> B) (p : f =1 g)
+Lemma pmap_eqp A B (f g : A -> B) (p : f =1 g)
            (x y : A) (q : x = y) : g`_* q =  (f`_* q) ^ p.
-Proof. by rewrite (conjpE p) mulprespLR mulKp. Qed.
+Proof. by rewrite (conjpE p) mulpmapLR mulKp. Qed.
 
 (* A slightly different version of the previous lemma was actually in the *)
 (* original file *)
 Lemma homotopy_naturality {A B} {x y : A} (f g : A -> B) (p : f =1 g) (q : x = y) :
   (f`_* q) * p y = p x * (g`_* q).
-Proof. rewrite (resp_eqp p) mulVKp; reflexivity. Qed.
+Proof. rewrite (pmap_eqp p) mulVKp; reflexivity. Qed.
 
 (* Was not in the original file ? *)
-Lemma resp_eqidp A (f : A -> A) (p : f =1 id) (x y : A) (q : x = y) : (f`_* q) ^ p = q.
-Proof. by rewrite -(resp_eqp p) respidp. Qed.
+Lemma pmap_eqidp A (f : A -> A) (p : f =1 id) (x y : A) (q : x = y) : (f`_* q) ^ p = q.
+Proof. by rewrite -(pmap_eqp p) pmapidp. Qed.
 
 (* Was not in the original file ? *)
-Lemma resp_eqpid A (f : A -> A) (p : id =1 f) (x y : A) (q : x = y) : (f`_* q) = q ^ p.
-Proof. by rewrite (resp_eqp p) respidp. Qed.
+Lemma pmap_eqpid A (f : A -> A) (p : id =1 f) (x y : A) (q : x = y) : (f`_* q) = q ^ p.
+Proof. by rewrite (pmap_eqp p) pmapidp. Qed.
 
 (* cancel f g := g is a left inverse of f ie f is a right inverse of g see ssrfun.v *)
 (* Was not in the original file ? *)
-Lemma can_respp A B (f : A -> B) (g : B -> A) (p : cancel f g) 
+Lemma can_pmap A B (f : A -> B) (g : B -> A) (p : cancel f g) 
       (x y : A) (q : x = y) : g`_* (f`_* q) ^ p = q.
-Proof. by rewrite -resppcomp (resp_eqidp p). Qed.
+Proof. by rewrite -pmapcomp (pmap_eqidp p). Qed.
 
 (* Was not in the original file ? *)
 Lemma conj_canV A B (f : A -> B) (g : B -> A) (p : id =1 g \o f) 
       (x y : A) (q : x = y) : g`_* (f`_* q) = q ^ p.
-Proof. by rewrite -resppcomp (resp_eqpid p). Qed.
+Proof. by rewrite -pmapcomp (pmap_eqpid p). Qed.
 
-(* Lemma resppJ  A B C (f g : A -> B) (p : f =1 g) (h : B -> C) *)
+(* Lemma pmapJ  A B C (f g : A -> B) (p : f =1 g) (h : B -> C) *)
 (*       (x y : A) (q : f x = f y) : *)
 (*   h`_* (q ^ p) = (h`_* q) ^ (fun x => h`_* (p x)). *)
-(* Proof. by rewrite !resppM -resppV. Qed. *)
+(* Proof. by rewrite !pmapM -pmapV. Qed. *)
 
 End GroupoidTheoryOfPaths.
 

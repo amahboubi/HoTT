@@ -76,7 +76,7 @@ fun px => let 'erefl := p in px.
 Arguments transport {A} P {x y} p%path_scope px.
 
 (* Transport is very common so it is worth introducing a notation for it. *)
-Notation "p # px" := (transport _ p px) (right associativity, at level 65).
+Notation Local "p # px" := (transport _ p px) (right associativity, at level 65).
 
 (* Sanity check : two easy lemmas *)
 Lemma transport1p {A} {P : fibration A} {x : A} (u : P x) : 1 # u = u.

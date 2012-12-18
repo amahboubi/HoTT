@@ -48,7 +48,7 @@ Proof. by case: _ /  d Qt1. Qed.
 Lemma transport_eq C D (L R : C -> D) (t1 t2 : C) (qq : t1 = t2) 
   (Qt1 : L t1 = R t1) : 
   transport (fun y : C => L y = R y) qq  Qt1 = 
-  ((resp L qq)^-1 * Qt1 * resp R qq)%path.
+  ((pmap L qq)^-1 * Qt1 * pmap R qq)%path.
 Proof. by case: _ / qq => /=; rewrite mul1p. Qed.
 
 (* We work here under a strong assumption of function extensionality. *)
@@ -112,7 +112,7 @@ Definition natural (h : A') : Type :=
 (** And then we ned an additional condition on naturality. *)
 Definition coherent {h : A'} (p : natural h) :=
   forall (X Y Z : U) (e : X -> Y) (f : Y -> Z) (g : A -> X),
-    p Y Z f (e \o g) * resp f (p X Y e g) = p X Z (f \o e) g.
+    p Y Z f (e \o g) * pmap f (p X Y e g) = p X Z (f \o e) g.
 
 Definition eta_natural (a : A) : natural (eta a) := fun _ _ _ _ => 1.
 
@@ -125,7 +125,7 @@ Variables (h : A') (p : natural h) (c : coherent p).
 
 Lemma cohrent_p1 X f : p X X id f = 1.
 Proof.
-by have /(canRL (mulKp _)) := c _ _ _ id id f; rewrite mulVp respidp.
+by have /(canRL (mulKp _)) := c _ _ _ id id f; rewrite mulVp pmapidp.
 Qed.
 
 Lemma coherent_fg X Y f g : 
@@ -133,7 +133,7 @@ Lemma coherent_fg X Y f g :
 Proof.
 have := c _ _ _ g f id.
 move/(congr1 (fun x => x * (f`_* (p A X g id))^-1)%path).
-by rewrite mulpK resppV.
+by rewrite mulpK pmapV.
 Qed.
 
 (* We use the groupoid hypothesis to show that the type of coherence proofs *)
@@ -165,7 +165,7 @@ Definition alpha (h : A') (p : natural h) : eta (rho h) = h :=
 
 Lemma vK : cancel v u.
 Proof.
-move=> [h [p c]]; rewrite /u /=; apply: (resp sigA)^-1 => /=.
+move=> [h [p c]]; rewrite /u /=; apply: (pmap sigA)^-1 => /=.
 suff q : (eta (h A id); eta_natural (h A id)) = (h; p).
   by apply: (congr_exist q); apply: is_contr_eq; apply: coherent_is_contr.
 apply: (congr_exist (alpha _ p)).
@@ -173,7 +173,7 @@ apply: funext => X; apply: funext => Y; apply: funext => f; apply: funext => g.
 rewrite 4!transport_dep [p X Y f g]coherent_fg // transport_eq.
 rewrite -[_ `_* _]/(((@^~ (f \o g)) \o (@^~ Y)) `_* (alpha _ _)).
 rewrite -[_ `_* _ in X in _ * X]/((f \o (@^~ g) \o (@^~ X)) `_* (alpha _ _)).
-by rewrite !resppcomp -!/(happly _ _) !inverseK invpK.
+by rewrite !pmapcomp -!/(happly _ _) !inverseK invpK.
 Qed.
 
 Definition A_equiv_A'': A <~> A'' := can2_equiv uK vK.
