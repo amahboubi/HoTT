@@ -11,7 +11,7 @@ Open Scope equiv_scope.
 (* We start with some material missing in the underlying libraries *)
 
 Definition happly {X} {P : X -> Type} {f g : forall x, P x} (p : f = g) (x : X) 
-  : f x = g x := match p with identity_refl => 1 end.
+  : f x = g x := (fun f => f x)`_* p.
 
 Lemma congr_exist {A : Type} {Q : A -> Type}
       {x y : A} {u : Q x} {v : Q y} (p : x = y) :
@@ -51,7 +51,6 @@ Lemma transport_eq C D (L R : C -> D) (t1 t2 : C) (qq : t1 = t2)
   ((resp L qq)^-1 * Qt1 * resp R qq)%path.
 Proof. by case: _ / qq => /=; rewrite mul1p. Qed.
 
-
 (* We work here under a strong assumption of function extensionality. *)
 
 Axiom funext_axiom : 
@@ -61,25 +60,6 @@ Canonical happly_equiv {X} {P : X -> Type} (f g : forall x, P x)
   : (f = g) <~> forall x, f x = g x := is_equiv_equiv (funext_axiom X P f g).
 
 Notation funext := happly^-1.
-
-(* The resp (pmap) operation has some interesting properties under the *)
-(* funext assumption. They should hold with weaker versions. *)
-Section RespFunExt.
-Variables (C : Type) (cc : C).
-Lemma resp_app D (x y : C -> D) (qq : forall c : C, x c  = y c) : 
-  resp (fun t : C -> D => t cc) (funext qq) = qq cc.
-Proof. 
-rewrite -[qq in RHS](equivK [equiv of funext]) /=.
-by case: _ / (funext qq) => /=.
-Qed.
-
-Lemma resp_app_dep D (x y : forall c : C, D c) (qq : forall c : C, x c  = y c) : 
-  resp (fun t : forall c : C, D c => t cc) (funext qq) = qq cc.
-  rewrite -[qq in RHS](equivK [equiv of funext]) /=.
-Proof.  by case: _ / (funext qq) => /=. Qed.
-
-End RespFunExt.
-
 
 Section InAGroupoidUniverse.
 
@@ -97,7 +77,6 @@ Definition U := Type.
    truncation:*)
 Hypothesis my_groupoids : forall (X : U) (x y : X) (p1 p2 : x = y) 
   (h1 h2 : p1 = p2), h1 = h2.
-
 
 (* Think of [tp] as a coercion from the universe to types. *)
 Parameter tp : U -> Type. 
@@ -123,10 +102,7 @@ Definition rho : A' -> A := fun (h : A') => h A (fun a : A => a).
 
 (** [eta] is a section of [rho], definitionally. This is very convenient. 
    NB: We should never have to use retr. *)
-Lemma retr (a : A) : rho (eta a) = a.
-Proof.
-  reflexivity.
-Defined.
+Definition retr (a : A) : rho (eta a) = a := erefl.
 
 (** We impose an additional condition on elements of [A'], which is
    just a form of naturality. *)
@@ -148,7 +124,9 @@ Section CoherenceTheory.
 Variables (h : A') (p : natural h) (c : coherent p).
 
 Lemma cohrent_p1 X f : p X X id f = 1.
-Proof. by have /(canRL (mulKp _)) := c _ _ _ id id f; rewrite mulVp respidp. Qed.
+Proof.
+by have /(canRL (mulKp _)) := c _ _ _ id id f; rewrite mulVp respidp.
+Qed.
 
 Lemma coherent_fg X Y f g : 
   p X Y f g = p A Y (f \o g) id * (f`_* (p A X g id)^-1)%path.
@@ -157,7 +135,6 @@ have := c _ _ _ g f id.
 move/(congr1 (fun x => x * (f`_* (p A X g id))^-1)%path).
 by rewrite mulpK resppV.
 Qed.
-
 
 (* We use the groupoid hypothesis to show that the type of coherence proofs *)
 (* of a natual inhabitant of A' is contractile *)
@@ -168,7 +145,6 @@ by exists c => coh2; do 6! (apply: funext => ?); apply: my_groupoids.
 Qed.
 
 End CoherenceTheory.
-
 
 (* Now the definition of the actual dual isomorphic to A *)
 
@@ -187,27 +163,17 @@ Lemma uK : cancel u v. Proof. done. Qed.
 Definition alpha (h : A') (p : natural h) : eta (rho h) = h :=
   funext (fun X => funext (fun f => (p A X f id)^-1%path)).
 
-
 Lemma vK : cancel v u.
 Proof.
 move=> [h [p c]]; rewrite /u /=; apply: (resp sigA)^-1 => /=.
 suff q : (eta (h A id); eta_natural (h A id)) = (h; p).
-  apply: (congr_exist q); apply: is_contr_eq.
-  exact: coherent_is_contr.
-apply: (congr_exist (alpha _ p)) => /=.
+  by apply: (congr_exist q); apply: is_contr_eq; apply: coherent_is_contr.
+apply: (congr_exist (alpha _ p)).
 apply: funext => X; apply: funext => Y; apply: funext => f; apply: funext => g.
-rewrite 4! transport_dep /eta_natural /= [p X Y f g]coherent_fg // transport_eq. 
-congr (_ * _) => /=.
-  set q := (M in _ `_* M).
-  set F := (M in M `_* _).
-  have -> : F `_* q = ((fun z => z (f \o g)) \o (fun y => y Y))`_* q.
-    by rewrite resppcomp.
-  by rewrite resppcomp 2!resp_app_dep invpK.
-set q := (M in _ `_* M).
-set F := (M in M `_* _).
-have -> : F `_* q = ((fun z => f z) \o (fun w => w g) \o (fun y => y X)) `_* q.
-  by rewrite !resppcomp.
-by rewrite 3!resppcomp 2!resp_app_dep /= respidp.
+rewrite 4!transport_dep [p X Y f g]coherent_fg // transport_eq.
+rewrite -[_ `_* _]/(((@^~ (f \o g)) \o (@^~ Y)) `_* (alpha _ _)).
+rewrite -[_ `_* _ in X in _ * X]/((f \o (@^~ g) \o (@^~ X)) `_* (alpha _ _)).
+by rewrite !resppcomp -!/(happly _ _) !inverseK invpK.
 Qed.
 
 Definition A_equiv_A'': A <~> A'' := can2_equiv uK vK.
